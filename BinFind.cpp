@@ -1,6 +1,7 @@
 //TODO:
 // - Groups
 // - Crash when supplying a pattern byte as simply "<" or ">"
+// - Crash when matching pattern ending with 0 or 1/more operator such as "00 00?"
 // - Crash when matching past total buffer size (eg. with rep_1orMore)
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -105,24 +106,28 @@ bool BinFindPatternByte::MatchesByte(uint8_t input)
 	return false;
 }
 
-std::tuple<size_t, bool> BinFindPatternByte::Matches(uint8_t* input)
+size_t BinFindPatternByte::Matches(uint8_t* input, bool &isOK)
 {
 	BinFindPatternByteRepeat repeat = GetRepeat();
 
 	if (repeat == rep_1) {
 		if (MatchesByte(*input)) {
-			return std::make_tuple(1, true);
+			isOK = true;
+			return 1;
 		}
-		return std::make_tuple(0, false);
 
 	} else if (repeat == rep_0or1) {
 		if (MatchesByte(*input)) {
-			return std::make_tuple(1, true);
+			isOK = true;
+			return 1;
 		}
-		if (std::get<1>(NextInOwner().Matches(input))) {
-			return std::make_tuple(0, true);
+
+		bool isSubOK = false;
+		NextInOwner().Matches(input, isSubOK);
+		if (isSubOK) {
+			isOK = true;
+			return 0;
 		}
-		return std::make_tuple(0, false);
 
 	} else if (repeat == rep_0orMore) {
 		if (MatchesByte(*input)) {
@@ -130,23 +135,33 @@ std::tuple<size_t, bool> BinFindPatternByte::Matches(uint8_t* input)
 			while (MatchesByte(*(input++))) {
 				ret++;
 			}
-			return std::make_tuple(ret, true);
+
+			isOK = true;
+			return ret;
 		}
-		if (std::get<1>(NextInOwner().Matches(input))) {
-			return std::make_tuple(0, true);
+
+		bool isSubOK = false;
+		NextInOwner().Matches(input, isSubOK);
+		if (isSubOK) {
+			isOK = true;
+			return 0;
 		}
-		return std::make_tuple(0, false);
 
 	} else if (repeat == rep_1orMore) {
 		size_t ret = 0;
 		while (MatchesByte(*(input++))) {
 			ret++;
 		}
-		return std::make_tuple(ret, ret > 0);
+
+		isOK = ret > 0;
+		return ret;
+
+	} else {
+		printf("ERROR: Unknown pattern byte repeat while matching at %p: %d\n", input, (int)repeat);
 	}
 
-	printf("ERROR: Unknown pattern byte repeat while matching at %p: %d\n", input, (int)repeat);
-	return std::make_tuple(0, false);
+	isOK = false;
+	return 0;
 }
 
 BinFindPatternByte &BinFindPatternByte::NextInOwner()
@@ -186,28 +201,33 @@ void BinFindPattern::MatchBegin()
 	CurrentOffset = 0;
 }
 
-std::tuple<size_t, bool> BinFindPattern::MatchesNextByte(uint8_t* input)
+size_t BinFindPattern::MatchesNextByte(uint8_t* input, bool &isOK)
 {
 	if (CurrentOffset >= Bytes.size()) {
 		printf("ERROR: Trying to match bytes past pattern size!");
-		return std::make_tuple(0, false);
+		isOK = false;
+		return 0;
 	}
 
 	BinFindPatternByte &byte = Bytes[CurrentOffset];
-	auto match = byte.Matches(input);
-	if (std::get<1>(match)) {
+	bool isSubOK = false;
+	size_t sz = byte.Matches(input, isSubOK);
+	if (isSubOK) {
 		if (CurrentOffset == 0) {
 			ResultHit = input;
 			ResultSize = 0;
 		}
 		CurrentOffset++;
-		size_t sz = std::get<0>(match);
+
 		ResultSize += sz;
-		return std::make_tuple(sz, true);
+
+		isOK = true;
+		return sz;
 	}
 
 	CurrentOffset = 0;
-	return std::make_tuple(0, false);
+	isOK = false;
+	return 0;
 }
 
 bool BinFindPattern::MatchComplete()
@@ -238,10 +258,11 @@ std::vector<BinFindSection> BinFind::Find(const char* pattern)
 
 	uint8_t* p = m_buffer;
 	while ((size_t)(p - m_buffer) < m_size) {
-		auto match = compiled.MatchesNextByte(p);
+		bool isOK = false;
+		size_t sz = compiled.MatchesNextByte(p, isOK);
 
-		if (std::get<1>(match)) {
-			p += std::get<0>(match);
+		if (isOK) {
+			p += sz;
 
 			if (compiled.MatchComplete()) {
 				BinFindSection result;
@@ -305,11 +326,6 @@ static void BinFind_SetColor(BinFind_ConsoleColor fg = col_None, BinFind_Console
 
 void BinFind_DumpMemory(uint8_t* buffer, size_t size, std::vector<BinFindSection>* highlights)
 {
-	/*
-	00000000  48 65 6c 6c 6f 2c 20 77  6f 72 6c 64 2c 20 68 6f  |Hello, world, ho|
-	00000010  77 20 61 72 65 20 79 6f  75 20 3a 44 0a           |w are you :D.|
-	0000001d
-	*/
 	size_t offset = 0;
 
 	BinFindSection* highlight = nullptr;

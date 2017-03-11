@@ -38,8 +38,7 @@ public:
 	BinFindPatternByte(BinFindPattern* owner, const char* byte);
 
 	bool MatchesByte(uint8_t input);
-	// Returns: { NumBytes, Match }
-	std::tuple<size_t, bool> Matches(uint8_t* input);
+	size_t Matches(uint8_t* input, bool &isOK);
 
 	inline BinFindPatternByteRepeat GetRepeat() { return (BinFindPatternByteRepeat)((Info & 0x00FF0000) >> 16); }
 	inline BinFindPatternByteOperation GetOperation() { return (BinFindPatternByteOperation)((Info & 0x0000FF00) >> 8); }
@@ -62,8 +61,7 @@ public:
 	BinFindPattern(const char* pattern);
 
 	void MatchBegin();
-	// Returns: { NumBytes, Match }
-	std::tuple<size_t, bool> MatchesNextByte(uint8_t* input);
+	size_t MatchesNextByte(uint8_t* input, bool &isOK);
 	bool MatchComplete();
 };
 
