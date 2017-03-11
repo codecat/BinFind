@@ -21,6 +21,8 @@ for (auto result : ret) {
 }
 ```
 
+There's a simple example you can compile and run in `main.cpp` as well.
+
 You can also call `BinFind_DumpMemory` to dump a memory region with an optional vector of sections to highlight, which will result in the screenshot above.
 
 ## License
