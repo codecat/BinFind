@@ -25,11 +25,9 @@ static void TestSearch(const char* pattern)
 	BinFind find(buffer, sizeof(buffer));
 	auto ret = find.Find(pattern);
 
-	/*
 	for (auto result : ret) {
 		printf("* %p -> %p\n", result.Pointer, result.Pointer + result.Size);
 	}
-	*/
 
 	BinFind_DumpMemory(buffer, sizeof(buffer), &ret);
 }
