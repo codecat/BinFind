@@ -44,7 +44,9 @@ int main()
 	TestSearch("0C A0 00+");
 	TestSearch("05 05 FF? 04 04");
 
+#ifdef _MSC_VER
 	getchar();
+#endif
 
 	return 0;
 }
