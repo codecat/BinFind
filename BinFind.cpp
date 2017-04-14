@@ -330,7 +330,50 @@ static void BinFind_SetColor(BinFind_ConsoleColor fg = col_None, BinFind_Console
 
 	SetConsoleTextAttribute(hConsole, attr);
 #else
-	//TODO
+	static BinFind_ConsoleColor _lastFg = col_None;
+	static BinFind_ConsoleColor _lastBg = col_None;
+
+	if (fg != _lastFg || bg != _lastBg) {
+		printf("\e[0m");
+	}
+
+	if (fg != _lastFg) {
+		if (fg == col_Red) {
+			printf("\e[31m");
+		} else if (fg == (col_Green)) {
+			printf("\e[32m");
+		} else if (fg == (col_Blue)) {
+			printf("\e[34m");
+		} else if (fg == (col_Red | col_Green)) {
+			printf("\e[33m");
+		} else if (fg == (col_Red | col_Blue)) {
+			printf("\e[35m");
+		} else if (fg == (col_Green | col_Blue)) {
+			printf("\e[36m");
+		} else if (fg == (col_Red | col_Green | col_Blue)) {
+			printf("\e[37m");
+		}
+		_lastFg = fg;
+	}
+
+	if (bg != _lastBg) {
+		if (bg == col_Red) {
+			printf("\e[41m");
+		} else if (bg == (col_Green)) {
+			printf("\e[42m");
+		} else if (bg == (col_Blue)) {
+			printf("\e[44m");
+		} else if (bg == (col_Red | col_Green)) {
+			printf("\e[43m");
+		} else if (bg == (col_Red | col_Blue)) {
+			printf("\e[45m");
+		} else if (bg == (col_Green | col_Blue)) {
+			printf("\e[46m");
+		} else if (bg == (col_Red | col_Green | col_Blue)) {
+			printf("\e[47m");
+		}
+		_lastBg = bg;
+	}
 #endif
 }
 

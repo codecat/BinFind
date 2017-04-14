@@ -1,3 +1,4 @@
 *.vcxproj*
 [Dd]ebug
 [Rr]elease
+/test
