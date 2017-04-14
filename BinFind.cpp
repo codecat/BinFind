@@ -257,14 +257,20 @@ std::vector<BinFindSection> BinFind::Find(const char* pattern)
 	compiled.MatchBegin();
 
 	uint8_t* p = m_buffer;
+	uint8_t* pf = nullptr;
 	while ((size_t)(p - m_buffer) < m_size) {
 		bool isOK = false;
 		size_t sz = compiled.MatchesNextByte(p, isOK);
 
 		if (isOK) {
+			if (compiled.CurrentOffset == 1) {
+				pf = p;
+			}
 			p += sz;
 
 			if (compiled.MatchComplete()) {
+				pf = nullptr;
+
 				BinFindSection result;
 				result.Pointer = compiled.ResultHit;
 				result.Size = compiled.ResultSize;
@@ -273,6 +279,10 @@ std::vector<BinFindSection> BinFind::Find(const char* pattern)
 				compiled.MatchBegin();
 			}
 		} else {
+			if (pf != nullptr) {
+				p = pf;
+				pf = nullptr;
+			}
 			p++;
 		}
 	}
